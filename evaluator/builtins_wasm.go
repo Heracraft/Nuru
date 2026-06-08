@@ -5,10 +5,12 @@ package evaluator
 
 import (
 	"fmt"
-	"strings"
 	"github.com/NuruProgramming/Nuru/object"
+	"strings"
 	"syscall/js"
 )
+
+var StinBuffer []string
 
 var builtins = map[string]*object.Builtin{
 	"jaza": {
@@ -20,6 +22,12 @@ var builtins = map[string]*object.Builtin{
 
 			if len(args) == 1 && args[0].Type() != object.STRING_OBJ {
 				return newError(fmt.Sprintf(`Tafadhali tumia alama ya nukuu: "%s"`, args[0].Inspect()))
+			}
+
+			if len(StinBuffer) > 0 {
+				item := StinBuffer[0]
+				StinBuffer = StinBuffer[1:]
+				return &object.String{Value: item}
 			}
 
 			// Get the window.prompt function
@@ -36,7 +44,7 @@ var builtins = map[string]*object.Builtin{
 				result = jsPromptFunction.Invoke(args[0].Inspect())
 			}
 
-			if result.String() == ""|| result.String() == "null" {
+			if result.String() == "" || result.String() == "null" {
 				return newError("Nimeshindwa kusoma uliyo yajaza")
 			}
 
@@ -64,8 +72,8 @@ var builtins = map[string]*object.Builtin{
 	},
 }
 
-func init(){
-	for name, builtin := range commonBuiltins{
-		builtins[name]=builtin
+func init() {
+	for name, builtin := range commonBuiltins {
+		builtins[name] = builtin
 	}
 }

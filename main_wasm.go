@@ -13,12 +13,28 @@ import (
 	"syscall/js"
 )
 
-func Read(contents string) {
+func Read(args []js.Value) {
+	code := args[0].String()
+
+	if len(args) > 1 {
+		// TODO: type check arg for array of strings
+		stdinBufferJsArray := args[1]
+		// fmt.Print(stdinBufferJsArray)
+		// fmt.Print(stdinBufferJsArray.Type().String())
+
+		bufferLength := stdinBufferJsArray.Length()
+		evaluator.StinBuffer = make([]string, bufferLength)
+
+		for i := 0; i < bufferLength; i++ {
+			evaluator.StinBuffer[i] = stdinBufferJsArray.Index(i).String()
+		}
+	}
+
 	jsOutputReceiverFunction := js.Global().Get("nuruOutputReceiver")
 
 	env := object.NewEnvironment()
 
-	l := lexer.New(contents)
+	l := lexer.New(code)
 	p := parser.New(l)
 
 	program := p.ParseProgram()
@@ -29,7 +45,7 @@ func Read(contents string) {
 
 		for _, msg := range p.Errors() {
 			// fmt.Println("\t" + msg)
-			jsOutputReceiverFunction.Invoke("\t" + msg, true)
+			jsOutputReceiverFunction.Invoke("\t"+msg, true)
 		}
 
 	}
@@ -43,8 +59,7 @@ func Read(contents string) {
 }
 
 func runCode(this js.Value, args []js.Value) interface{} {
-	code := args[0].String()
-	Read(code)
+	Read(args)
 	return nil
 }
 
